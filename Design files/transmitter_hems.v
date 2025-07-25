@@ -1,8 +1,10 @@
-module transmitter#(parameter CLKS_PER_BIT=10417)(
+module transmitter(
     input i_data_avail,
     input [7:0] i_data_byte,
     input clk,
-    input rst_n, // Add asynchronous reset input (active low)
+    input rst, // Add asynchronous reset input (active low)
+    input clk_tick,
+    input parity,
     output reg o_active,
     output reg o_done,
     output reg o_tx
@@ -11,16 +13,15 @@ module transmitter#(parameter CLKS_PER_BIT=10417)(
     reg [7:0]data_byte;
     reg [1:0]state;
     reg [2:0]index;
-    reg [15:0]counter;
-    
+        
     localparam IDLE=2'b00;
     localparam START=2'b01;
     localparam SEND_BIT=2'b10;
     localparam STOP=2'b11;
     
+    
     always@(posedge clk or negedge rst_n)begin // Add rst_n to sensitivity list
-        if (!rst_n) begin // Asynchronous reset for all registers
-            counter <= 0;
+        if (rst) begin // Asynchronous reset for all registers
             index <= 0;
             o_done <= 0;
             o_active <= 0; // Ensure active is reset
@@ -30,7 +31,6 @@ module transmitter#(parameter CLKS_PER_BIT=10417)(
         end else begin
             case(state)
                 IDLE:begin
-                    counter<=0;
                     index<=0;
                     o_done<=0;
                     o_tx<=1'b1;
@@ -46,30 +46,25 @@ module transmitter#(parameter CLKS_PER_BIT=10417)(
                 
                 START:begin
                     o_tx<=0;
-                    if(counter<CLKS_PER_BIT-1)begin
-                        counter<=counter+16'b1;
-                        state<=START;
-                    end
-                    else begin
-                        counter<=0;
+                    if(clk_tick)begin
                         state<=SEND_BIT;
                     end             
                 end
                 
                 SEND_BIT:begin
                     o_tx<=data_byte[index];
-                    if(counter<CLKS_PER_BIT-1)begin
-                        counter<=counter+16'b1;
-                        state<=SEND_BIT;
-                    end            
-                    else begin
-                        counter<=0;
-                        if(index<7)begin
+                     if(clk_tick)begin
+                        if(index<8)begin // Iterate through data bits 0 to 7 (total 8 bits)
                             index<=index+3'b1;
                             state<=SEND_BIT;
                         end
-                        else begin
+                        else if (index == 8) begin // After sending 8 data bits, send parity bit
+                            index <= index + 3'b1; // Increment for stop bit
+                            state <= STOP;
+                        end
+                        else begin // Should ideally go to STOP state after parity
                             index<=0;
+                            o_tx<=1'b1;
                             state<=STOP;
                         end
                     end
@@ -77,16 +72,15 @@ module transmitter#(parameter CLKS_PER_BIT=10417)(
                 
                 STOP:begin 
                     o_tx<=1'b1;
-                    if(counter<CLKS_PER_BIT-1)begin
-                        counter<=counter+16'b1;
-                        state<=STOP;
-                    end   
-                    else begin
+                    if(clk_tick)begin
                         o_active<=0;
                         o_done<=1;
                         state<=IDLE;
                     end
-                end         
+                end
+                
+                default:state<=IDLE;
+                         
             endcase
         end // end if(!rst_n)
     end // end always
