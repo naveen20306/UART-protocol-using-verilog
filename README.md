@@ -67,3 +67,8 @@ This repository will be updated **step-by-step** as the design progresses:
 - Demo videos or terminal logs
 
 Stay tuned for new commits or raise issues/discussions if you're interested in contributing or collaborating.
+
+Contributions:
+1.Naveen Kumar B(naveenau2023@gmail.com)
+2.Hemanth S
+3.Sabarish Mohan JS
