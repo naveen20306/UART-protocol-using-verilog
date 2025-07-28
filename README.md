@@ -76,8 +76,8 @@ The design consists of the following Verilog modules:
 ## 👥 Contributors
 
 - **Naveen Kumar B** – [naveenau2023@gmail.com](mailto:naveenau2023@gmail.com)  
-- **Hemanth S**  
-- **Sabarish Mohan JS**
+- **Hemanth S**  -(github profile: https://github.com/hemanth028)
+- **Sabarish Mohan JS** - (github profile: https://github.com/sabarishmohanjs)
 
 ---
 
